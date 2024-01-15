@@ -1,0 +1,94 @@
+{
+    "monitor":true,
+    
+    "location":"003001001",
+
+    "mqtt_flag":true,
+    "cam_flag":false,
+    "log":true,
+    "api":false,
+
+    "status_topic": "Monitor/status/<location>",
+    "get_status_topic": "Monitor/status/<location>/get",
+    "config_topic": "Monitor/config/<location>",
+    "set_config_topic": "Monitor/config/<location>/set",
+    "get_config_topic": "Monitor/config/<location>/get",
+    "info_topic": "Fish/info/<location>",
+    "alarm_topic": "Fish/alarm/<location>",
+    "get_video_topic": "Fish/video/<location>/get",
+    "control_ready_topic": "Fish/control/<location>/ready",
+    "control_topics": [
+        "Fish/control/<location>/require",
+        "Fish/control/<location>/stop",
+        "Fish/control/<location>/led",
+        "Fish/control/<location>/motion",
+        "Fish/control/<location>/mode"
+    ],
+
+    "pub_interval": 60,
+    "same_err_interval": 3600,
+
+    "serial_timeout": 1.5,
+    "retry_limit": 5,
+    "find_fish_interval": 60,
+    "queue_limit":10,
+    
+    "video_duration": 120,
+    "video_storage_limit": 10,
+
+    "joysticks":{
+        "BFF19B62":{
+            "ids":["3004"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": false,
+                "leave_auto": false
+            }
+        },
+        "9D099982":{
+            "ids":["3006"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": false,
+                "leave_auto": false
+            }
+        },
+        "08149935": {
+            "ids": [
+                "3049"
+            ],
+            "priority": 30,
+            "timeout": 180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": true,
+                "leave_auto": true 
+            }
+        }
+    }
+}
