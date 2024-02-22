@@ -78,12 +78,15 @@ class Monitor():
                     config["get_video_topic"],
                     config["control_ready_topic"], config["control_topics"]
                 )
-                self._mqtt_client.start(
-                    getenv("MQTT_HOST"),
-                    int(getenv("MQTT_PORT")),
-                    getenv("MQTT_USER"),
-                    getenv("MQTT_PSW")
-                )
+                try:
+                    self._mqtt_client.start(
+                        getenv("MQTT_HOST"),
+                        int(getenv("MQTT_PORT")),
+                        getenv("MQTT_USER"),
+                        getenv("MQTT_PSW")
+                    )
+                except:
+                    self.logger.warning("Monitor - could not start mqtt")
             self._find_joystick(config["joysticks"])
         self.status = self.check_status()
 

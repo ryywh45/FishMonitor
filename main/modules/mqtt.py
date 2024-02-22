@@ -77,14 +77,9 @@ class MQTT_Client():
             for id in payload:
                 self.lora_queue.put(self.lora_msg(50, id, payload[id]))
         elif msg.topic == self.control_topics[3]: # control motion
-            pass
-            # if self.ctrl['status'] == 'controlling':
-            #     payload = json.loads(msg.payload)
-            #     self.ctrl_content = {
-            #         'id':payload['id'],
-            #         'code':payload['motion']
-            #     }
-            #     self.ctrl['event'].set()
+            payload = json.loads(msg.payload)
+            for id in payload:
+                self.lora_queue.put(self.lora_msg(50, id, payload[id]))
         elif msg.topic == self.control_topics[4]:  # control mode
             pass
             # if self.ctrl['status'] == 'controlling':
