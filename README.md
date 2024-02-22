@@ -165,7 +165,7 @@ pip install "fastapi[all]"
 pip install gpiozero
 pm2 start localapi.py --interperter=python3
 ```
-*如果轉傳器要離線運行，把mqtt_flag設為false
+*如果轉傳器要離線運行，mqtt_flag可為true，重新連上網路後重開機即可
 ### 7. 設定開機啟動
 ```
 pm2 starup
