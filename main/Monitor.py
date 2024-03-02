@@ -87,6 +87,7 @@ class Monitor():
                     )
                 except:
                     self.logger.warning("Monitor - could not start mqtt")
+                    self._mqtt_flag = False
             self._find_joystick(config["joysticks"])
         self.status = self.check_status()
 
@@ -305,8 +306,11 @@ class Monitor():
 
     def run(self):
         content = ''
-        for key in self.status:
-            content += f'-> {key}: {self.status[key]}\n'
+        try:
+            for key in self.status:
+                content += f'-> {key}: {self.status[key]}\n'
+        except:
+            pass
         print(f'Monitor - Start:\n{content}-> mqtt-flag: {self._mqtt_flag}\n-> cam-flag: {self._cam_flag}')
         self.logger.info(f'Monitor - Start:\n{content}-> mqtt-flag: {self._mqtt_flag}\n-> cam-flag: {self._cam_flag}')
         
