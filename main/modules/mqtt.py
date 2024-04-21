@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import json
 
 class MQTT_Client():
-    def __init__(self, location, logger, check_status, check_config, change_config, lora_queue, lora_msg, log=True):
+    def __init__(self, location, logger, check_status, check_config, change_config, lora, log=True):
         self.client = None
         self._location = location
         #self._post_url = post_url
@@ -12,8 +12,7 @@ class MQTT_Client():
         self.check_monitor_config = check_config
         self.change_monitor_config = change_config
         self.log = log
-        self.lora_queue = lora_queue
-        self.lora_msg = lora_msg
+        self.lora = lora
 
     def apply_location(
             self, 
@@ -75,11 +74,11 @@ class MQTT_Client():
         elif msg.topic == self.control_topics[2]: # control led
             payload = json.loads(msg.payload)
             for id in payload:
-                self.lora_queue.put(self.lora_msg(50, id, payload[id]))
+                self.lora.send(target=id, codes=payload[id], channel=2)
         elif msg.topic == self.control_topics[3]: # control motion
             payload = json.loads(msg.payload)
             for id in payload['id'].split(','):
-                self.lora_queue.put(self.lora_msg(50, id, payload['motion']))
+                self.lora.send(target=id, codes=payload['motion'], channel=2)
         elif msg.topic == self.control_topics[4]:  # control mode
             pass
             # if self.ctrl['status'] == 'controlling':
@@ -117,13 +116,13 @@ class MQTT_Client():
     #-------------------------------------------------#
 
     def start(self, host, port, user, psw):
-        if self.log is True: self.logger.info('MQTT - mqtt client start')
         self.client = mqtt.Client()
         self.client.username_pw_set(user, psw)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.client.connect(host, port)
         self.client.loop_start()
+        if self.log is True: self.logger.info('MQTT - mqtt client start')
 
 if __name__ == '__main__':
     pass
