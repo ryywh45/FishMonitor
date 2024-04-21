@@ -15,6 +15,7 @@ stat_led.blink()
 def nothing():
     return
 
+# stat led: green
 @app.post("/api/led/stat/on")
 def stat_on():
     stat_led.on()
@@ -30,9 +31,15 @@ def stat_off():
     stat_led.off()
     return
 
+# lora led: yellow
 @app.post("/api/led/lora/on")
 def lora_on():
     lora_led.on()
+    return
+
+@app.post("/api/led/lora/blink")
+def lora_blink():
+    lora_led.blink()
     return
 
 @app.post("/api/led/lora/off")
@@ -45,9 +52,15 @@ def lora_trig():
     lora_led.blink(0.05, 0.05, 1)
     return
 
+# joy led: red
 @app.post("/api/led/joy/on")
 def joy_on():
     joy_led.on()
+    return
+
+@app.post("/api/led/joy/blink")
+def joy_blink():
+    joy_led.blink()
     return
 
 @app.post("/api/led/joy/off")

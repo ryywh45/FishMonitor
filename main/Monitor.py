@@ -3,12 +3,13 @@ from time import time, sleep
 from dotenv import load_dotenv
 from os import getenv
 from requests import post
-import json
+import json, datetime
 
 from modules.animals import Animal, Fish, Turtle
-from modules.lora import Lora, LoraMsg, LoraQueue
+from modules.lora import Lora
 from modules.mqtt import MQTT_Client
 from modules.joystick import Joystick
+from modules.line import lineNotify
 
 class Monitor():
     def __init__(self):
@@ -20,6 +21,7 @@ class Monitor():
         load_dotenv()
         self._auto_channel = int(getenv("AUTO_CHANNEL"))
         self._ctrl_channel = int(getenv("CTRL_CHANNEL"))
+        self.line_token = getenv("LINE_TOKEN")
         with open('config.json', 'r') as f:
             config = json.load(f)
             self._location = config["location"]
@@ -31,43 +33,26 @@ class Monitor():
             self._same_err_interval = config['same_err_interval']
             self.log = config["log"]
             self.api = config["api"]
-            self._ctrl_lora_queue = LoraQueue(config["queue_limit"])
-            if config['monitor'] is True:
-                self.mode = 'monitor'
-                Animal.lora = Lora(
-                    getenv("COMPORT1"),
-                    getenv("BAUD"),
-                    config["serial_timeout"],
-                    self.log,
-                    self.api
-                )
+            self.notify_interval = int(config["notify_interval"])
+            Animal.lora = Lora(
+                getenv("COMPORT1"),
+                getenv("BAUD"),
+                config["serial_timeout"],
+                self.log,
+                self.api
+            )
+            if config["monitor"]:
+                self.mode = 'monitor' 
             else:
-                self.mode = 'transceiver'
-                self._ctrl_lora_queue.setup_lora(
-                    getenv("COMPORT1"),
-                    getenv("BAUD"),
-                    config["serial_timeout"],
-                    self.log,
-                    self.api
-                )
-            # if self._cam_flag is True:
-            #     self._cam = Cam(
-            #         getenv("RTSP_URL"),
-            #         config['video_duration'],
-            #         config["video_storage_limit"],
-            #         self._location
-            #     )
+                self.mode = 'tranceiver'
             if self._mqtt_flag is True:
                 self._mqtt_client = MQTT_Client(
                     self._location,
-                    #getenv("VIDEO_POST_URL"),
-                    #config["video_storage_limit"],
                     self._set_logger('mqtt'),
                     self.check_status,
                     self.check_config,
                     self.change_config,
-                    self._ctrl_lora_queue,
-                    LoraMsg,
+                    Animal.lora,
                     self.log
                 )
                 self._mqtt_client.apply_location(
@@ -92,10 +77,11 @@ class Monitor():
         self.status = self.check_status()
 
     def _setup(self):
+        Thread(target=Animal.lora.send_loop).start()
         if self._cam_flag is True:
             self._cam.start()
 
-        Animal.lora.send('FF', 'z', self._auto_channel, read=False)
+        Animal.lora.send('FF', 'z', self._auto_channel)
         # Animal.lora.send('FF', 'z', self._ctrl_channel, read=False)
         # self._find(channel = self._ctrl_channel)
         self._find(channel = self._auto_channel)
@@ -211,30 +197,63 @@ class Monitor():
             sleep(self._find_interval)
             self.should_find = True
 
+    def _scheduled_notify(self, start_hour, end_hour):
+        while True:
+            now = datetime.datetime.now()
+            if start_hour <= now.hour < end_hour:
+                try: post('http://127.0.0.1:8000/api/led/stat/blink')
+                except: pass
+
+                # init
+                msg = '\n' + now.strftime('%Y/%m/%d %H:%M:%S') + '\n'
+                Animal.all = []
+                Animal.lora.send('FF', 'z', self._auto_channel, priority=50)
+                Animal.lora.send('FF', 'z', self._ctrl_channel, priority=50)
+
+                # find and update info
+                self._find(self._auto_channel, priority=50)
+                self._find(self._ctrl_channel, priority=50)
+                self._updateInfo(priority=50)
+
+                # process msg and send line notify
+                for fish in Animal.all:
+                    msg += f'鯉魚{fish.id}：電量{fish.bc}%\n'
+                try:
+                    lineNotify(self.line_token, msg[:-1])
+                except Exception as e:
+                    self.logger.warning(f"Monitor - could not send line notify: \n{e}")
+                    print(f"Monitor - could not send line notify: \n{e}")
+
+                try: post('http://127.0.0.1:8000/api/led/stat/on')
+                except: pass
+
+                sleep(self.notify_interval)
+            else:
+                sleep(60)
+
     #----------------------------------------------------------------#
 
-    def _find(self, channel:int):
+    def _find(self, channel:int, priority=99):
         print(f'Monitor - finding in lora ch{channel}')
         self.logger.info(f'Monitor - finding in lora ch{channel}')
 
         retry_count = 0
         while retry_count < self._retry_limit:
-            data = Animal.lora.send('FF', 'v', channel)
+            data = Animal.lora.send('FF', 'v', channel, need_response=True, priority=priority)
             try: 
-                data[1]
+                id = data[0].split(',')[1]
+                ver = data[1].split(',')[1][:-1]
             except:
                 retry_count += 1
                 continue
-            Animal.lora.success_count += 1
-            id = data[0].split(',')[1]
-            ver = data[1].split(',')[1][:-1]
+            
             if id[0] == '3': Fish(id, ver, channel)
             elif id[0] == '6': Turtle(id, ver, channel)
             else:
                 print(f'Monitor - unexpected id:{id}')
                 self.logger.warning(f'Monitor - unexpected id:{id}')
                 Fish(id, ver, channel)
-            Animal.lora.send(f'{id}', 'Z', read=False)
+            Animal.lora.send(f'{id}', 'Z', channel, priority=priority)
             retry_count = 0
 
         if channel == self._ctrl_channel:
@@ -247,15 +266,15 @@ class Monitor():
         print(f'Monitor - animal list now: {Animal.all}')
         self.logger.info(f'Monitor - animal list now:{Animal.all}')
 
-        print(f'Monitor - lora transmission success rate:{Animal.lora.success_rate}')
-        self.logger.info(f'Monitor - lora transmission success rate:{Animal.lora.success_rate}')
+        # print(f'Monitor - lora transmission success rate:{Animal.lora.success_rate}')
+        # self.logger.info(f'Monitor - lora transmission success rate:{Animal.lora.success_rate}')
 
-    def _updateInfo(self):
+    def _updateInfo(self, priority=99):
         on_err = False
         for animal in Animal.all.copy():
             if animal.ctrl_by != None: continue
             previous_err = animal.err_code
-            animal.collect_info(self._retry_limit)
+            animal.collect_info(self._retry_limit, priority=priority)
             if animal.active == 0:
                 self._alarm(animal.id, -1, int(time()), animal.info)
                 if self._cam_flag is True:
@@ -299,10 +318,12 @@ class Monitor():
     #----------------------------------------------------------------#
 
     def start_ctrl(self):
-        Thread(target=self._ctrl_lora_queue.send_loop, args=(self._ctrl_channel,)).start()
+        Thread(target=Animal.lora.send_loop).start()
         sleep(5)
         for joy in Joystick.all:
-            Thread(target=joy.read_to_queue, args=(self._ctrl_lora_queue, LoraMsg)).start()
+            Thread(target=joy.read_to_queue, args=(Animal.lora,)).start()
+        sleep(10)
+        Thread(target=self._scheduled_notify, args=(9, 17)).start()
 
     def run(self):
         content = ''

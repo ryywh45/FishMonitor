@@ -1,7 +1,7 @@
 {
-    "monitor":true,
+    "monitor":false,
     
-    "location":"003001001",
+    "location":"002001001",
 
     "mqtt_flag":true,
     "cam_flag":false,
@@ -30,9 +30,11 @@
 
     "serial_timeout": 1.5,
     "retry_limit": 5,
-    "find_fish_interval": 60,
+    "find_fish_interval": 300,
     "queue_limit":10,
     
+    "notify_interval": 3600,
+
     "video_duration": 120,
     "video_storage_limit": 10,
 
