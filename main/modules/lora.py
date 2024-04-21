@@ -2,6 +2,7 @@ import serial
 from queue import Queue, PriorityQueue
 from dataclasses import dataclass, field
 from time import sleep
+from requests import post
 
 class Lora:
     logger = None
@@ -17,6 +18,7 @@ class Lora:
         self.msg_queue = PriorityQueue()
         self.res_queue = Queue()
         self.enable_logging = enable_logging
+        self.api = api
 
     def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
         """ Just call this function to send lora message """
@@ -29,12 +31,16 @@ class Lora:
         
     def send_loop(self):
         """ Send messages in queue with priority """
+        # Create a thread to run this function
         while True:
             loraMsg: LoraMsg = self.msg_queue.get()
             self._send(loraMsg.target, loraMsg.codes, loraMsg.channel)
             if loraMsg.need_response:
                 res = self._receive()
                 self.res_queue.put(res)
+            if self.api is True: 
+                try: post('http://127.0.0.1:8000/api/led/lora/trig')
+                except: pass
             sleep(0.25)
 
     def _send(self, target:str, codes:str, channel=int):
