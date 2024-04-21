@@ -44,7 +44,7 @@ class Monitor():
             if config["monitor"]:
                 self.mode = 'monitor' 
             else:
-                self.mode = 'tranceiver'
+                self.mode = 'transceiver'
             if self._mqtt_flag is True:
                 self._mqtt_client = MQTT_Client(
                     self._location,
