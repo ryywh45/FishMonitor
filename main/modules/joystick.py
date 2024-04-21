@@ -133,7 +133,7 @@ class Joystick():
             # else:
             #     if self.log is True: self.logger.warning(f'Joystick - {self.id}: unexpexted mode {data[14]}')
 
-    def read_to_queue(self, lora_queue, LoraMsg):
+    def read_to_queue(self, lora):
         while True:
             code = self.read()
             if code != None: # no data
@@ -147,10 +147,10 @@ class Joystick():
                     else:
                         self._apply_ctrl_status(self.id)
                         for id in self.bind_ids:
-                            lora_queue.put(LoraMsg(self.priority, id, code))
+                            lora.send(target=id, codes=code, channel=2, priority=self.priority)
                         if code == 'S': # stop after switch mode
                             for id in self.bind_ids:
-                                lora_queue.put(LoraMsg(self.priority, id, 'X'))
+                                lora.send(target=id, codes='X', channel=2, priority=self.priority)
                 else: # timeout
                     self._apply_ctrl_status(None)
                     self._closed = True

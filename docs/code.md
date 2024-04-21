@@ -56,6 +56,9 @@ class Monitor()
     def _find_timer(self):
         // timer for monitor find fish
 
+    def _scheduled_notify(self, start_hour, end_hour):
+        // 轉傳器模式的時候，在每天的9～17點之間每一段時間發出電量通報
+        
     #----------------------------------------------------------------#
 
     def _find(self, channel:int):
@@ -93,31 +96,33 @@ class Lora():
         // 變數定義
         // serial初始化
     
-    def open(self):
-        // 開啟serial，目前沒用到
-
-    def close(self):
-        // 關閉serial，目前沒用到
-
-    def send(self, target:str, codes:str, channel=7, timeout=None, read=True):
-        // read: 是否讀取回傳
+    def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
+        """ Just call this function to send lora message """
         // 傳送codes至target
+        // channel: 預設7
+        // need_response: 是否等待回傳
+        // priority: 優先順序，越小越優先
+        // 實際的行為是將LoraMsg放入lora_queue中排隊
+
+    def send_loop(self):
+        """ Send messages in queue with priority """
+
+    def _send(self, target:str, codes:str, channel=int):
+        """ Send directly without queue """
+        // serial write
+
+    def _receive(self):
+        """ Receive data from lora """
+        // 讀取serial收到的資料，處理後回傳
+
+    def _process_data(self, target:str, codes:str, channel=int):
+        """ Process data to send """
+        // 處理要放進serial的資料
 
 @dataclass(order=True)
 class LoraMsg():
-    """Message format of lora (conctrolling only)"""
+    """Message format of lora"""
 
-class LoraQueue(PriorityQueue):
-    """A priority queue that handle lora sending (conctrolling only)"""
-
-    def setup_lora(self, port, baud, timeout, log, api):
-        // lora初始化
-
-    def _send(self, channel):
-        // 從queue讀取LoraMsg並發送
-
-    def send_loop(self, channel):
-        // 每0.25秒讀取一次queue並發送，無線迴圈
 ```
 ## Animal class
 ### animals.py

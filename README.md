@@ -27,8 +27,9 @@
 |    |  |--fishled.py   // 切換led用
 |    |  |--joystick.py  // 遙控器相關
 |    |  |--mqtt.py      // mqtt相關
+|    |  |--line.py      // 發送line notify
 |    |  └--capCam.py    // 已停用
-|    |--logs
+|    |--logs            // 存放各功能的log
 |    |  |--monitor
 |    |  |--mqtt
 |    |  |--lora

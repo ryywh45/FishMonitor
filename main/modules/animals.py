@@ -14,12 +14,12 @@ class Animal:
     def __repr__(self) -> str:
         return self.id
 
-    def collect_info(self, retry_limit, timeout=1.5):
+    def collect_info(self, retry_limit, timeout=1.5, priority=99):
         retry_count = 0
         while retry_count < retry_limit:
-            info = self.lora.send(self.id, 'i', self.channel)
+            info = self.lora.send(self.id, 'i', self.channel, need_response=True, priority=priority)
             if info[0] != '':
-                self.lora.success_count += 1
+                # self.lora.success_count += 1
                 self.active = 1
                 for data in info:
                     data = data.split(',')
@@ -34,7 +34,7 @@ class Animal:
                 retry_count += 1
                 continue
         self.active = 0
-        self.lora.send(self.id, 'z', self.channel, read=False)
+        self.lora.send(self.id, 'z', self.channel, priority=priority)
         return 0
     
     @property
@@ -43,6 +43,7 @@ class Animal:
                           "err":self.err_code,
                           "active":self.active,
                           "version":self.version }}
+    
     
 class Fish(Animal):
     def __init__(self, id, version=0, channel=0, bc=0, err_code=0, active=0):
