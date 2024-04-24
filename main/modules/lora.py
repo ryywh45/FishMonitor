@@ -3,22 +3,23 @@ from queue import Queue, PriorityQueue
 from dataclasses import dataclass, field
 from time import sleep
 from requests import post
+from logging import Logger
 
 class Lora:
-    logger = None
+    logger: Logger = None
 
-    def __init__(self, port, baud, timeout, enable_logging=True, api=False):
+    def __init__(self, port, baud, timeout, enable_logging=True, enable_led=False):
         """ Open serial port and initialize message queue """
         try:
             self.ser = serial.Serial(port, baud, timeout=timeout)
         except serial.SerialException as e:
             print(f"Serial port {port} not found. {e}")
             if enable_logging: self.logger.error(f"Serial port {port} not found. {e}")
-            exit()
+            exit(1)
         self.msg_queue = PriorityQueue()
         self.res_queue = Queue()
         self.enable_logging = enable_logging
-        self.api = api
+        self.enable_led = enable_led
 
     def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
         """ Just call this function to send lora message """
@@ -36,28 +37,28 @@ class Lora:
             loraMsg: LoraMsg = self.msg_queue.get()
             self._send(loraMsg.target, loraMsg.codes, loraMsg.channel)
             if loraMsg.need_response:
-                res = self._receive()
-                self.res_queue.put(res)
-            if self.api is True: 
-                try: post('http://127.0.0.1:8000/api/led/lora/trig')
+                self.res_queue.put(self._receive())
+            if self.enable_led:
+                try: post('http://127.0.0.1:8000/enable_led/led/lora/trig')
                 except: pass
             sleep(0.25)
 
     def _send(self, target:str, codes:str, channel=int):
         """ Send directly without queue """
-        if self.enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+        payload = self._process_data(target, codes, channel)
         try:
-            payload = self._process_data(target, codes, channel)
             self.ser.write(payload)
         except Exception as e:
-            if self.enable_logging: self.logger.error(f'Lora - {e}')
-            print(f'Lora - {e}')
+            if self.enable_logging: self.logger.warning(f'Lora - unable to write to serial: {e}')
+            print(f'Lora - unable to write to serial: {e}')
+        if self.enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
 
     def _receive(self):
         """ Receive data from lora """
-        data = self.ser.readline()
-        return str(data)[2:-2].split(",,")
-        # return data.decode().strip().split(",,") *(need to test).
+        data = str(self.ser.readline())[2:-2].split(",,")
+        if self.enable_logging: self.logger.debug(f'Lora - received: {data}')
+        return data
+        # return str(self.ser.readline()).decode().strip().split(",,") *(need to test).
     
     def _process_data(self, target:str, codes:str, channel=int):
         """ Process data to send """
