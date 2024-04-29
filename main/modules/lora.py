@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from time import sleep
 from requests import post
 from logging import Logger
+from threading import Thread
 
 class Lora:
     logger: Logger = None
@@ -16,30 +17,31 @@ class Lora:
             print(f"Serial port {port} not found. {e}")
             if enable_logging: self.logger.error(f"Serial port {port} not found. {e}")
             exit(1)
-        self.msg_queue = PriorityQueue()
-        self.res_queue = Queue()
-        self.enable_logging = enable_logging
-        self.enable_led = enable_led
+        self._msg_queue = PriorityQueue()
+        self._res_queue = Queue()
+        self._enable_logging = enable_logging
+        self._enable_led = enable_led
+
+        Thread(target=self._send_loop).start()
 
     def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
         """ Just call this function to send lora message """
-        self.msg_queue.put(LoraMsg(priority, target, codes, channel, need_response))
+        self._msg_queue.put(LoraMsg(priority, target, codes, channel, need_response))
         if need_response:
             # block until response is received
-            return self.res_queue.get()
+            return self._res_queue.get()
         else:
             return None
         
-    def send_loop(self):
+    def _send_loop(self):
         """ Send messages in queue with priority """
-        # Create a thread to run this function
         while True:
-            loraMsg: LoraMsg = self.msg_queue.get()
+            loraMsg: LoraMsg = self._msg_queue.get()
             self._send(loraMsg.target, loraMsg.codes, loraMsg.channel)
             if loraMsg.need_response:
-                self.res_queue.put(self._receive())
-            if self.enable_led:
-                try: post('http://127.0.0.1:8000/enable_led/led/lora/trig')
+                self._res_queue.put(self._receive())
+            if self._enable_led:
+                try: post('http://127.0.0.1:8000/_enable_led/led/lora/trig')
                 except: pass
             sleep(0.25)
 
@@ -49,14 +51,14 @@ class Lora:
         try:
             self.ser.write(payload)
         except Exception as e:
-            if self.enable_logging: self.logger.warning(f'Lora - unable to write to serial: {e}')
+            if self._enable_logging: self.logger.warning(f'Lora - unable to write to serial: {e}')
             print(f'Lora - unable to write to serial: {e}')
-        if self.enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+        if self._enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
 
     def _receive(self):
         """ Receive data from lora """
         data = str(self.ser.readline())[2:-2].split(",,")
-        if self.enable_logging: self.logger.debug(f'Lora - received: {data}')
+        if self._enable_logging: self.logger.debug(f'Lora - received: {data}')
         return data
         # return str(self.ser.readline()).decode().strip().split(",,") *(need to test).
     

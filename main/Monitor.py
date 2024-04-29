@@ -77,7 +77,6 @@ class Monitor():
         self.status = self.check_status()
 
     def _setup(self):
-        Thread(target=Animal.lora.send_loop).start()
         if self._cam_flag is True:
             self._cam.start()
 
@@ -247,12 +246,12 @@ class Monitor():
                 retry_count += 1
                 continue
             
-            if id[0] == '3': Fish(id, ver, channel)
-            elif id[0] == '6': Turtle(id, ver, channel)
+            if id[0] == '3': Animal.all.append(Fish(id, ver, channel))
+            elif id[0] == '6': Animal.all.append(Turtle(id, ver, channel))
             else:
                 print(f'Monitor - unexpected id:{id}')
                 self.logger.warning(f'Monitor - unexpected id:{id}')
-                Fish(id, ver, channel)
+                Animal.all.append(Fish(id, ver, channel))
             Animal.lora.send(f'{id}', 'Z', channel, priority=priority)
             retry_count = 0
 
@@ -318,7 +317,6 @@ class Monitor():
     #----------------------------------------------------------------#
 
     def start_ctrl(self):
-        Thread(target=Animal.lora.send_loop).start()
         sleep(5)
         for joy in Joystick.all:
             Thread(target=joy.read_to_queue, args=(Animal.lora,)).start()

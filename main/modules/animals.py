@@ -3,12 +3,11 @@ class Animal:
     all = []
     def __init__(self, id='0', version='', channel=0, bc=0, err_code=0, active=0):
         self.id = id
+        self.version = version
+        self.channel = channel
         self.bc = bc
         self.err_code = err_code
         self.active = active
-        self.version = version
-        self.channel = channel
-        self.ctrl_by = None
         self.err_time = None
 
     def __repr__(self) -> str:
@@ -39,10 +38,11 @@ class Animal:
     
     @property
     def info(self):
-        return { self.id:{"bc":self.bc,
-                          "err":self.err_code,
-                          "active":self.active,
-                          "version":self.version }}
+        return { self.id:{
+                    "bc":self.bc,
+                    "err":self.err_code,
+                    "active":self.active,
+                    "version":self.version }}
     
     
 class Fish(Animal):
@@ -50,14 +50,12 @@ class Fish(Animal):
         super().__init__(
             id, version, channel, bc, err_code, active
         )
-        Animal.all.append(self)
 
 class Turtle(Animal):
     def __init__(self, id, version=0, channel=0, bc=0, err_code=0, active=0):
         super().__init__(
             id, version, channel, bc, err_code, active
         )
-        Animal.all.append(self)
 
 if __name__ == '__main__':
     from serial import Serial
