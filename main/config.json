@@ -1,12 +1,12 @@
 {
     "monitor":false,
     
-    "location":"002001001",
+    "location":"003001001",
 
     "mqtt_flag":true,
     "cam_flag":false,
     "log":true,
-    "api":false,
+    "api":true,
 
     "status_topic": "Monitor/status/<location>",
     "get_status_topic": "Monitor/status/<location>/get",
@@ -40,7 +40,7 @@
 
     "joysticks":{
         "BFF19B62":{
-            "ids":["3004"],
+            "ids":["FF"],
             "priority":30,
             "timeout":180,
             "enable": {
@@ -52,8 +52,8 @@
                 "middle": true,
                 "switch_mode": true,
                 "led": true,
-                "auto": false,
-                "leave_auto": false
+                "auto": true,
+                "leave_auto": true
             }
         },
         "9D099982":{
@@ -75,7 +75,7 @@
         },
         "08149935": {
             "ids": [
-                "3049"
+                "3001"
             ],
             "priority": 30,
             "timeout": 180,
@@ -88,8 +88,42 @@
                 "middle": true,
                 "switch_mode": true,
                 "led": true,
+                "auto": false,
+                "leave_auto": false 
+            }
+        },
+        "0216FEDA":{
+            "ids":["3007"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": false,
+                "leave_auto": false
+            }
+        },
+        "65AD910B":{
+            "ids":["FF"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
                 "auto": true,
-                "leave_auto": true 
+                "leave_auto": true
             }
         }
     }

@@ -1,9 +1,13 @@
 {
-    "location": "002001001",
-    "mqtt_flag": false,
-    "cam_flag": false,
-    "log": true,
-    "api": false,
+    "monitor":false,
+    
+    "location":"003001001",
+
+    "mqtt_flag":true,
+    "cam_flag":false,
+    "log":true,
+    "api":true,
+
     "status_topic": "Monitor/status/<location>",
     "get_status_topic": "Monitor/status/<location>/get",
     "config_topic": "Monitor/config/<location>",
@@ -20,21 +24,25 @@
         "Fish/control/<location>/motion",
         "Fish/control/<location>/mode"
     ],
+
     "pub_interval": 60,
     "same_err_interval": 3600,
+
     "serial_timeout": 1.5,
     "retry_limit": 5,
-    "find_fish_interval": 60,
-    "queue_limit": 10,
+    "find_fish_interval": 300,
+    "queue_limit":10,
+    
+    "notify_interval": 3600,
+
     "video_duration": 120,
     "video_storage_limit": 10,
-    "joysticks": {
-        "BFF19B62": {
-            "ids": [
-                "3004"
-            ],
-            "priority": 30,
-            "timeout": 180,
+
+    "joysticks":{
+        "BFF19B62":{
+            "ids":["FF"],
+            "priority":30,
+            "timeout":180,
             "enable": {
                 "forward": true,
                 "left": true,
@@ -42,18 +50,16 @@
                 "floating": true,
                 "diving": true,
                 "middle": true,
-                "switch mode": true,
+                "switch_mode": true,
                 "led": true,
-                "auto": false,
-                "leave auto": false
+                "auto": true,
+                "leave_auto": true
             }
         },
-        "9D099982": {
-            "ids": [
-                "3006"
-            ],
-            "priority": 30,
-            "timeout": 180,
+        "9D099982":{
+            "ids":["3006"],
+            "priority":30,
+            "timeout":180,
             "enable": {
                 "forward": true,
                 "left": true,
@@ -61,15 +67,15 @@
                 "floating": true,
                 "diving": true,
                 "middle": true,
-                "switch mode": true,
+                "switch_mode": true,
                 "led": true,
                 "auto": false,
-                "leave auto": false
+                "leave_auto": false
             }
         },
         "08149935": {
             "ids": [
-                "3049"
+                "3001"
             ],
             "priority": 30,
             "timeout": 180,
@@ -80,10 +86,44 @@
                 "floating": true,
                 "diving": true,
                 "middle": true,
-                "switch mode": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": false,
+                "leave_auto": false 
+            }
+        },
+        "0216FEDA":{
+            "ids":["3007"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
+                "led": true,
+                "auto": false,
+                "leave_auto": false
+            }
+        },
+        "65AD910B":{
+            "ids":["FF"],
+            "priority":30,
+            "timeout":180,
+            "enable": {
+                "forward": true,
+                "left": true,
+                "right": true,
+                "floating": true,
+                "diving": true,
+                "middle": true,
+                "switch_mode": true,
                 "led": true,
                 "auto": true,
-                "leave auto": true
+                "leave_auto": true
             }
         }
     }

@@ -45,6 +45,7 @@ class Lora:
 
     def _send(self, target:str, codes:str, channel=int):
         """ Send directly without queue """
+        if codes == 'a': channel = 7
         if self.enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
         try:
             payload = self._process_data(target, codes, channel)
