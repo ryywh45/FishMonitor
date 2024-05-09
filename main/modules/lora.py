@@ -1,4 +1,4 @@
-import serial
+from serial import Serial, SerialException
 from queue import Queue, PriorityQueue
 from dataclasses import dataclass, field
 from time import sleep
@@ -9,19 +9,18 @@ from threading import Thread
 class Lora:
     logger: Logger = None
 
-    def __init__(self, port, baud, timeout, enable_logging=True, enable_led=False):
+    def __init__(self, port:str, baud:int, timeout:float, logger=None, enable_led=False):
         """ Open serial port and initialize message queue """
+        Lora.logger = logger
+        self._enable_led = enable_led
         try:
-            self.ser = serial.Serial(port, baud, timeout=timeout)
-        except serial.SerialException as e:
-            print(f"Serial port {port} not found. {e}")
-            if enable_logging: self.logger.error(f"Serial port {port} not found. {e}")
+            self.ser = Serial(port, baud, timeout=timeout)
+        except SerialException as errMsg:
+            print(f"Lora - Serial port {port} not found: {errMsg}")
+            if Lora.logger is not None: self.logger.error(f"Lora - Serial port {port} not found: {errMsg}")
             exit(1)
         self._msg_queue = PriorityQueue()
         self._res_queue = Queue()
-        self._enable_logging = enable_logging
-        self._enable_led = enable_led
-
         Thread(target=self._send_loop).start()
 
     def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
@@ -32,7 +31,7 @@ class Lora:
             return self._res_queue.get()
         else:
             return None
-        
+
     def _send_loop(self):
         """ Send messages in queue with priority """
         while True:
@@ -41,9 +40,9 @@ class Lora:
             if loraMsg.need_response:
                 self._res_queue.put(self._receive())
             if self._enable_led:
-                try: post('http://127.0.0.1:8000/_enable_led/led/lora/trig')
+                try: post('http://127.0.0.1:8000/api/led/lora/trig')
                 except: pass
-            sleep(0.25)
+            sleep(5)
 
     def _send(self, target:str, codes:str, channel=int):
         """ Send directly without queue """
@@ -51,14 +50,14 @@ class Lora:
         try:
             self.ser.write(payload)
         except Exception as e:
-            if self._enable_logging: self.logger.warning(f'Lora - unable to write to serial: {e}')
+            if Lora.logger is not None: self.logger.warning(f'Lora - unable to write to serial: {e}')
             print(f'Lora - unable to write to serial: {e}')
-        if self._enable_logging: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+        if Lora.logger is not None: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
 
     def _receive(self):
         """ Receive data from lora """
         data = str(self.ser.readline())[2:-2].split(",,")
-        if self._enable_logging: self.logger.debug(f'Lora - received: {data}')
+        if Lora.logger is not None: self.logger.debug(f'Lora - received: {data}')
         return data
         # return str(self.ser.readline()).decode().strip().split(",,") *(need to test).
     
