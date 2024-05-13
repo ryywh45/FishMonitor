@@ -42,7 +42,7 @@ class Lora:
             if self._enable_led:
                 try: post('http://127.0.0.1:8000/api/led/lora/trig')
                 except: pass
-            sleep(5)
+            sleep(0.25)
 
     def _send(self, target:str, codes:str, channel=int):
         """ Send directly without queue """
