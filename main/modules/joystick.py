@@ -3,6 +3,7 @@ import usb.util
 from requests import post
 from threading import Lock
 from modules.fishled import FishLED
+from modules.R1R2 import SendR1R2
 
 class Joystick():
     vendor_id = 0x046d
@@ -126,8 +127,9 @@ class Joystick():
                 elif d3 == 64 and self.enable[6] is True:
                     return 'S' # switch mode
                 # B button
-                elif d3 == 32 and self.enable[7] is True:
-                    return FishLED.next()
+                elif d3 == 32 and self.enable[7] is True: #呼叫FishLED.next()用於更改魚的LED顏色
+                    #return FishLED.next()
+                    return  SendR1R2.next()      
                 else:
                     return 'other'
             # else:
