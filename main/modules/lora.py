@@ -87,3 +87,14 @@ class LoraMsg():
     codes: str = field(compare=False)
     channel: int = field(compare=False)
     need_response: bool = field(compare=False)
+
+if __name__ == '__main__':
+    lora = Lora('/dev/ttyUSB0', 9600, 1.5)
+    print('Single Lora send test')
+    print('==========================================')
+    channel = int(input('input channel: '))
+    print('==========================================')
+    while(True):
+        payload = input('input id,code: ').split(',')
+        print(lora.send(payload[0], payload[1], channel, True))
+        print()
