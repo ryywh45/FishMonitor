@@ -231,7 +231,7 @@ class Monitor():
                 self._find(self._ctrl_channel, priority=50)
                 self._updateInfo(priority=50)
                 self._pubInfo()
-                
+
                 # process msg and send line notify
                 for fish in Animal.all:
                     msg += f'鯉魚{fish.id}：電量{fish.bc}%\n'
@@ -301,8 +301,8 @@ class Monitor():
     def _updateInfo(self, priority=99):
         on_err = False
         for animal in Animal.all.copy():
-            if animal.ctrl_by != None:
-                continue
+            # if animal.ctrl_by != None:
+            #     continue
             previous_err = animal.err_code
             animal.collect_info(self._retry_limit, priority=priority)
             if animal.active == 0:
