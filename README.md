@@ -157,7 +157,7 @@ MQTT_PSW=
 ```
 ### 5. 啟動程式
 ```
-pm2 start Monitor.py --interperter=python3
+pm2 start Monitor.py --interpreter=python3
 ```
 ### 6. 轉傳器額外設定
 轉傳器才要做這段設定
