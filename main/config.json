@@ -31,7 +31,7 @@
     "serial_timeout": 1.5,
     "retry_limit": 5,
     "find_fish_interval": 300,
-    "queue_limit":10,
+    "queue_limit":6,
     
     "notify_interval": 3600,
 
@@ -75,10 +75,10 @@
         },
         "DCF59BA0": {
             "ids": [
-                "3049"
+                "ff"
             ],
             "priority": 30,
-            "timeout": 180,
+            "timeout": 20,
             "enable": {
                 "forward": true,
                 "left": true,

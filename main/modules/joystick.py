@@ -96,10 +96,12 @@ class Joystick():
                     return 'X' # stop
                 # LB
                 elif d3 == 1 and self.enable[8] is True: 
-                    return 'A' # auto
+                    return 'A' # auto(A)
+                    # return 'R1'  # stop record
                 # RB
                 elif d3 == 2 and self.enable[9] is True: 
-                    return 'a' # leave auto
+                    return 'a' # leave auto(a)
+                    # return 'R2'  # start record
                 # Y button
                 elif d3 == 128 and self.enable[3] is True: 
                     return 'U' # floating
@@ -154,6 +156,10 @@ class Joystick():
                 else: # timeout
                     self._apply_ctrl_status(None)
                     self._closed = True
+                    for id in self.bind_ids:
+                        lora.send(target=id, codes='X', channel=2, priority=self.priority)
+                        lora.send(target=id, codes='X', channel=2, priority=self.priority)
+                        lora.send(target=id, codes='X', channel=2, priority=self.priority)
             else:
                 continue
 

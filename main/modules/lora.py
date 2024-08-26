@@ -6,10 +6,11 @@ from requests import post
 from logging import Logger
 from threading import Thread
 
+
 class Lora:
     logger: Logger = None
 
-    def __init__(self, port:str, baud:int, timeout:float, logger=None, enable_led=False):
+    def __init__(self, port: str, baud: int, timeout: float, queue_limit=10, logger=None, enable_led=False):
         """ Open serial port and initialize message queue """
         Lora.logger = logger
         self._enable_led = enable_led
@@ -17,15 +18,17 @@ class Lora:
             self.ser = Serial(port, baud, timeout=timeout)
         except SerialException as errMsg:
             print(f"Lora - Serial port {port} not found: {errMsg}")
-            if Lora.logger is not None: self.logger.error(f"Lora - Serial port {port} not found: {errMsg}")
+            if Lora.logger is not None:
+                self.logger.error(f"Lora - Serial port {port} not found: {errMsg}")
             exit(1)
-        self._msg_queue = PriorityQueue()
-        self._res_queue = Queue()
-        Thread(target=self._send_loop).start()
+        self._msg_queue = LoraMsgQueue(queue_limit)
+        self._res_queue = Queue(queue_limit)
+        Thread(target=self._send_loop, daemon=True).start()
 
-    def send(self, target:str, codes:str, channel=7, need_response=False, priority=99):
+    def send(self, target: str, codes: str, channel=7, need_response=False, priority=99):
         """ Just call this function to send lora message """
-        self._msg_queue.put(LoraMsg(priority, target, codes, channel, need_response))
+        self._msg_queue.put(
+            LoraMsg(priority, target, codes, channel, need_response))
         if need_response:
             # block until response is received
             return self._res_queue.get()
@@ -34,40 +37,50 @@ class Lora:
 
     def _send_loop(self):
         """ Send messages in queue with priority """
-        while True:
-            loraMsg: LoraMsg = self._msg_queue.get()
-            self._send(loraMsg.target, loraMsg.codes, loraMsg.channel)
-            if loraMsg.need_response:
-                self._res_queue.put(self._receive())
-            if self._enable_led:
-                try: post('http://127.0.0.1:8000/api/led/lora/trig')
-                except: pass
-            sleep(0.25)
+        try:
+            while True:
+                loraMsg: LoraMsg = self._msg_queue.get()
+                self._send(loraMsg.target, loraMsg.codes, loraMsg.channel)
+                if loraMsg.need_response:
+                    self._res_queue.put(self._receive())
+                sleep(0.1)
+        finally:
+            self.ser.close()
 
-    def _send(self, target:str, codes:str, channel=int):
+    def _send(self, target: str, codes: str, channel=int):
         """ Send directly without queue """
+        if 'a' in codes: channel = 7
         payload = self._process_data(target, codes, channel)
         try:
             self.ser.write(payload)
         except Exception as e:
-            if Lora.logger is not None: self.logger.warning(f'Lora - unable to write to serial: {e}')
+            if Lora.logger is not None:
+                self.logger.warning(f'Lora - unable to write to serial: {e}')
             print(f'Lora - unable to write to serial: {e}')
-        if Lora.logger is not None: self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+        if Lora.logger is not None:
+            self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+        if self._enable_led:
+            try:
+                post('http://127.0.0.1:8000/api/led/lora/trig')
+            except:
+                pass
 
     def _receive(self):
         """ Receive data from lora """
-        data = str(self.ser.readline())[2:-2].split(",,")
-        if Lora.logger is not None: self.logger.debug(f'Lora - received: {data}')
+        # data = str(self.ser.readline())[2:-2].split(",,")
+        data = self.ser.readline().decode().strip('\x00 \n\r').split(",,")
+        if Lora.logger is not None:
+            self.logger.debug(f'Lora - received: {data}')
         return data
         # return str(self.ser.readline()).decode().strip().split(",,") *(need to test).
-    
-    def _process_data(self, target:str, codes:str, channel=int):
+
+    def _process_data(self, target: str, codes: str, channel=int):
         """ Process data to send """
         payload = bytearray()
-        if target == 'ff' or target == 'FF': # Brocast
+        if target == 'ff' or target == 'FF':  # Brocast
             payload.append(0xFF)
             payload.append(0xFF)
-        else: # Send code to specific fish
+        else:  # Send code to specific fish
             id = int(target)
             payload.append(int(id / 256))
             payload.append(int(id % 256))
@@ -75,9 +88,9 @@ class Lora:
         for code in codes:
             payload.append(ord(code))
         payload.append(ord('\n'))
-        
+
         return payload
-    
+
 
 @dataclass(order=True)
 class LoraMsg():
@@ -88,13 +101,35 @@ class LoraMsg():
     channel: int = field(compare=False)
     need_response: bool = field(compare=False)
 
+
+class LoraMsgQueue(PriorityQueue):
+    """ Priority queue for LoraMsg """
+    def __init__(self, maxsize: int = 0) -> None:
+        self.maxsize_for_lora = maxsize
+        super().__init__(maxsize * 2)
+
+    def put(self, item: LoraMsg, block=True, timeout=None):
+        """ Put LoraMsg into queue """
+        assert isinstance(item, LoraMsg), "item of LoraMsgQueue must be LoraMsg"
+        if self.qsize() >= self.maxsize_for_lora and item.codes != 'X':
+            return
+        super().put(item, block, timeout)
+
+
 if __name__ == '__main__':
     lora = Lora('/dev/ttyUSB0', 9600, 1.5)
     print('Single Lora send test')
     print('==========================================')
     channel = int(input('input channel: '))
     print('==========================================')
-    while(True):
+    while (True):
         payload = input('input id,code: ').split(',')
+        if payload[0] == 'exit':
+            exit(0)
         print(lora.send(payload[0], payload[1], channel, True))
         print()
+    # lora = Lora('/dev/ttyUSB0', 9600, 1.5)
+    # while True:
+    #     res = lora._receive()
+    #     # if res != ['']: print(res)
+    #     print(res)

@@ -18,6 +18,7 @@ def nothing():
 # stat led: green
 @app.post("/api/led/stat/on")
 def stat_on():
+    stat_led.off()
     stat_led.on()
     return
 
