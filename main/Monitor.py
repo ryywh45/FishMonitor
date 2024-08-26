@@ -213,6 +213,7 @@ class Monitor():
     def _scheduled_notify(self, start_hour, end_hour):
         while True:
             now = datetime.datetime.now()
+
             if start_hour <= now.hour < end_hour:
                 try:
                     post('http://127.0.0.1:8000/api/led/stat/blink')
@@ -229,7 +230,8 @@ class Monitor():
                 self._find(self._auto_channel, priority=50)
                 self._find(self._ctrl_channel, priority=50)
                 self._updateInfo(priority=50)
-
+                self._pubInfo()
+                
                 # process msg and send line notify
                 for fish in Animal.all:
                     msg += f'鯉魚{fish.id}：電量{fish.bc}%\n'
