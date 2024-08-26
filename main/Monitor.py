@@ -221,6 +221,7 @@ class Monitor():
                     pass
 
                 # init
+                self._updateInfo(priority=50)
                 msg = '\n' + now.strftime('%Y/%m/%d %H:%M:%S') + '\n'
                 Animal.all = []
                 Animal.lora.send('FF', 'z', self._auto_channel, priority=50)
