@@ -10,8 +10,16 @@ from threading import Thread
 class Lora:
     logger: Logger = None
 
-    def __init__(self, port: str, baud: int, timeout: float, queue_limit=10, logger=None, enable_led=False):
-        """ Open serial port and initialize message queue """
+    def __init__(
+        self,
+        port: str,
+        baud: int,
+        timeout: float,
+        queue_limit=10,
+        logger=None,
+        enable_led=False,
+    ):
+        """Open serial port and initialize message queue"""
         Lora.logger = logger
         self._enable_led = enable_led
         try:
@@ -25,10 +33,11 @@ class Lora:
         self._res_queue = Queue(queue_limit)
         Thread(target=self._send_loop, daemon=True).start()
 
-    def send(self, target: str, codes: str, channel=7, need_response=False, priority=99):
-        """ Just call this function to send lora message """
-        self._msg_queue.put(
-            LoraMsg(priority, target, codes, channel, need_response))
+    def send(
+        self, target: str, codes: str, channel=7, need_response=False, priority=99
+    ):
+        """Just call this function to send lora message"""
+        self._msg_queue.put(LoraMsg(priority, target, codes, channel, need_response))
         if need_response:
             # block until response is received
             return self._res_queue.get()
@@ -36,7 +45,7 @@ class Lora:
             return None
 
     def _send_loop(self):
-        """ Send messages in queue with priority """
+        """Send messages in queue with priority"""
         try:
             while True:
                 loraMsg: LoraMsg = self._msg_queue.get()
@@ -48,36 +57,37 @@ class Lora:
             self.ser.close()
 
     def _send(self, target: str, codes: str, channel=int):
-        """ Send directly without queue """
-        if 'a' in codes: channel = 7
+        """Send directly without queue"""
+        if "a" in codes:
+            channel = 7
         payload = self._process_data(target, codes, channel)
         try:
             self.ser.write(payload)
         except Exception as e:
             if Lora.logger is not None:
-                self.logger.warning(f'Lora - unable to write to serial: {e}')
-            print(f'Lora - unable to write to serial: {e}')
+                self.logger.warning(f"Lora - unable to write to serial: {e}")
+            print(f"Lora - unable to write to serial: {e}")
         if Lora.logger is not None:
-            self.logger.debug(f'Lora - send {codes} to {target} in ch{channel}')
+            self.logger.debug(f"Lora - send {codes} to {target} in ch{channel}")
         if self._enable_led:
             try:
-                post('http://127.0.0.1:8000/api/led/lora/trig')
+                post("http://127.0.0.1:8000/api/led/lora/trig")
             except:
                 pass
 
     def _receive(self):
-        """ Receive data from lora """
+        """Receive data from lora"""
         # data = str(self.ser.readline())[2:-2].split(",,")
-        data = self.ser.readline().decode().strip('\x00 \n\r').split(",,")
+        data = self.ser.readline().decode().strip("\x00 \n\r").split(",,")
         if Lora.logger is not None:
-            self.logger.debug(f'Lora - received: {data}')
+            self.logger.debug(f"Lora - received: {data}")
         return data
         # return str(self.ser.readline()).decode().strip().split(",,") *(need to test).
 
     def _process_data(self, target: str, codes: str, channel=int):
-        """ Process data to send """
+        """Process data to send"""
         payload = bytearray()
-        if target == 'ff' or target == 'FF':  # Brocast
+        if target == "ff" or target == "FF":  # Brocast
             payload.append(0xFF)
             payload.append(0xFF)
         else:  # Send code to specific fish
@@ -87,14 +97,15 @@ class Lora:
         payload.append(channel)
         for code in codes:
             payload.append(ord(code))
-        payload.append(ord('\n'))
+        payload.append(ord("\n"))
 
         return payload
 
 
 @dataclass(order=True)
-class LoraMsg():
-    """ Message format of lora """
+class LoraMsg:
+    """Message format of lora"""
+
     priority: int
     target: str = field(compare=False)
     codes: str = field(compare=False)
@@ -103,20 +114,21 @@ class LoraMsg():
 
 
 class LoraMsgQueue(PriorityQueue):
-    """ Priority queue for LoraMsg """
+    """Priority queue for LoraMsg"""
+
     def __init__(self, maxsize: int = 0) -> None:
         self.maxsize_for_lora = maxsize
         super().__init__(maxsize * 2)
 
     def put(self, item: LoraMsg, block=True, timeout=None):
-        """ Put LoraMsg into queue """
+        """Put LoraMsg into queue"""
         assert isinstance(item, LoraMsg), "item of LoraMsgQueue must be LoraMsg"
-        if self.qsize() >= self.maxsize_for_lora and item.codes != 'X':
+        if self.qsize() >= self.maxsize_for_lora and item.codes != "X":
             return
         super().put(item, block, timeout)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     lora = Lora('/dev/ttyUSB0', 9600, 1.5)
     print('Single Lora send test')
     print('==========================================')
@@ -128,8 +140,8 @@ if __name__ == '__main__':
             exit(0)
         print(lora.send(payload[0], payload[1], channel, True))
         print()
-    # lora = Lora('/dev/ttyUSB0', 9600, 1.5)
+    # lora = Lora("/dev/ttyUSB0", 9600, 1.5)
     # while True:
     #     res = lora._receive()
-    #     # if res != ['']: print(res)
-    #     print(res)
+    #     if res != [""]:
+    #         print(res)
