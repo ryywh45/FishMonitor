@@ -216,6 +216,11 @@ class Monitor():
             self._updateInfo(priority=50)
 
             now = datetime.datetime.now()
+            next_time = (now + datetime.timedelta(seconds=self.notify_interval)).replace(minute=0, second=0, microsecond=0)
+            sleep_time = (next_time - now).total_seconds()
+            sleep(sleep_time)
+            
+            now = datetime.datetime.now()
             if start_hour <= now.hour < end_hour:
                 try:
                     post('http://127.0.0.1:8000/api/led/stat/blink')
@@ -254,10 +259,6 @@ class Monitor():
                         post('http://127.0.0.1:8000/api/led/stat/on')
                     except:
                         pass
-
-                sleep(self.notify_interval)
-            else:
-                sleep(60)
 
     # ----------------------------------------------------------------#
 
