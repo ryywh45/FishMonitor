@@ -212,8 +212,10 @@ class Monitor():
 
     def _scheduled_notify(self, start_hour, end_hour):
         while True:
-            now = datetime.datetime.now()
+            # check fish status first
+            self._updateInfo(priority=50)
 
+            now = datetime.datetime.now()
             if start_hour <= now.hour < end_hour:
                 try:
                     post('http://127.0.0.1:8000/api/led/stat/blink')
@@ -221,7 +223,6 @@ class Monitor():
                     pass
 
                 # init
-                self._updateInfo(priority=50)
                 msg = '\n' + now.strftime('%Y/%m/%d %H:%M:%S') + '\n'
                 Animal.all = []
                 Animal.lora.send('FF', 'z', self._auto_channel, priority=50)
