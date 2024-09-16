@@ -212,34 +212,18 @@ class Monitor():
 
     def _scheduled_notify(self, start_hour, end_hour):
         while True:
-            # check fish status first
+            now = datetime.datetime.now()
+
+            try: post('http://127.0.0.1:8000/api/led/stat/blink')
+            except: pass
+            self._find(self._auto_channel, priority=50)
+            self._find(self._ctrl_channel, priority=50)
             self._updateInfo(priority=50)
+            self._pubInfo()
 
-            now = datetime.datetime.now()
-            next_time = (now + datetime.timedelta(seconds=self.notify_interval)).replace(minute=0, second=0, microsecond=0)
-            sleep_time = (next_time - now).total_seconds()
-            sleep(sleep_time)
-            
-            now = datetime.datetime.now()
-            if start_hour <= now.hour < end_hour:
-                try:
-                    post('http://127.0.0.1:8000/api/led/stat/blink')
-                except:
-                    pass
-
-                # init
-                msg = '\n' + now.strftime('%Y/%m/%d %H:%M:%S') + '\n'
-                Animal.all = []
-                Animal.lora.send('FF', 'z', self._auto_channel, priority=50)
-                Animal.lora.send('FF', 'z', self._ctrl_channel, priority=50)
-
-                # find and update info
-                self._find(self._auto_channel, priority=50)
-                self._find(self._ctrl_channel, priority=50)
-                self._updateInfo(priority=50)
-                self._pubInfo()
-
+            if start_hour <= now.hour <= end_hour:
                 # process msg and send line notify
+                msg = '\n' + now.strftime('%Y/%m/%d %H:%M:%S') + '\n'
                 for fish in Animal.all:
                     msg += f'鯉魚{fish.id}：電量{fish.bc}%\n'
                 try:
@@ -249,16 +233,16 @@ class Monitor():
                         f"Monitor - could not send line notify: \n{e}")
                     print(f"Monitor - could not send line notify: \n{e}")
 
-                try:
-                    self._pubInfo()
-                except:
-                    pass
-
                 for _ in range(3):        
                     try:
                         post('http://127.0.0.1:8000/api/led/stat/on')
                     except:
                         pass
+
+            now = datetime.datetime.now()
+            next_time = (now + datetime.timedelta(seconds=self.notify_interval)).replace(minute=0, second=0, microsecond=0)
+            sleep_time = (next_time - now).total_seconds()
+            sleep(sleep_time)
 
     # ----------------------------------------------------------------#
 
